@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: gateway
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: product-domain
+              uri: http://localhost:8081
+              predicates:
+                - Path=/products/**
+
+
+# Logging 설정
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.boot.web.embedded: DEBUG
+    root: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+
+
+loki:
+  url: http://localhost:3100
+  batch-size: 10
+  batch-timeout: 1s

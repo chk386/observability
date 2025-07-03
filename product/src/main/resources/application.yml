@@ -1,0 +1,123 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: product
+  threads:
+    virtual:
+      enabled: true
+
+  # PostgreSQL 데이터베이스 설정 (p6spy 적용)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/observability
+    #    url: jdbc:p6spy:postgresql://localhost:5432/observability
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  #    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: false
+        format_sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
+
+  # Kafka 설정 추가
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      buffer-memory: 33554432
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+    # consumer:
+    #   group-id: product-service
+    #   key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    #   value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    #   auto-offset-reset: earliest
+    #   enable-auto-commit: true
+    #   auto-commit-interval: 1000
+    #   properties:
+    #     spring.json.trusted.packages: "com.ayun.product.event"
+    #     max.poll.records: 500
+    #     session.timeout.ms: 30000
+    listener:
+      ack-mode: manual_immediate
+
+  # SQL 스크립트 설정
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+
+# p6spy 설정
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+      multiline: true
+      logging: slf4j
+      log-level: debug
+
+# Loki 설정
+loki:
+  url: http://localhost:3100
+  batch-size: 10
+  batch-timeout: 1s
+
+# Actuator 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,beans,configprops
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      # OTLP 메트릭 설정
+      otlp:
+        enabled: true
+        url: http://localhost:4318/v1/metrics
+        step: 10s
+        resource-attributes:
+          service.name: product
+          service.version: 1.0.0
+          deployment.environment: development
+      # Prometheus도 함께 활성화 (백업용)
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        jvm.gc.pause: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+        jvm.gc.pause: 0.5, 0.95, 0.99
+    tags:
+      application: product
+      environment: development
+
+logging:
+  level:
+    com.ayun.product: DEBUG
