@@ -13,9 +13,7 @@ import java.util.concurrent.Executors
 @SpringBootApplication class ObservabilityApplication
 
 fun main(args: Array<String>) {
-    val applicationContext = runApplication<ObservabilityApplication>(*args)
-
-    applicationContext.run { println("스프링 22 기동완료") }
+    runApplication<ObservabilityApplication>(*args)
 }
 
 @Configuration
